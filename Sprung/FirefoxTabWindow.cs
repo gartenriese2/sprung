@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -38,10 +39,12 @@ namespace Sprung
                 if (direction < 0)
                 {
                     SendKeys.Send("^{PGUP}");
+                    Debug.WriteLine("Sent PGUP");
                 }
                 else
                 {
                     SendKeys.Send("^{PGDN}");
+                    Debug.WriteLine("Sent PGDN");
                 }
             }
         }

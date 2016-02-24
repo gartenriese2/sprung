@@ -49,9 +49,13 @@ namespace Sprung
                 Window window = new Window(hWnd);
                 if (!settings.isWindowTitleExcluded(window.getTitle()) && !window.hasNoTitle())
                 {
+                    Debug.WriteLine("ProcessName: " + window.getProcessName());
                     if ((showTabs || settings.isListTabsAsWindows()) && window.getProcessName() == "firefox")
                     {
                         windows.AddRange(getFirefoxTabs(window));
+                    }
+                    else if ((showTabs || settings.isListTabsAsWindows()) && window.getProcessName() == "chrome") {
+                        windows.AddRange(getChromeTabs(window));
                     }
                     else if ((showTabs || settings.isListTabsAsWindows()) && window.getProcessName() == "iexplore")
                     {
@@ -94,7 +98,49 @@ namespace Sprung
             foreach(FirefoxTabWindow w in tabs) {
                 w.currentTabIndex = currentTabIndex;
             }
-            return tabs;              
+            return tabs;
+        }
+
+        private List<Window> getChromeTabs(Window chromeWindow) {
+            List<Window> tabs = new List<Window>();
+            string path = Directory.GetParent(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData)).FullName;
+            if (Environment.OSVersion.Version.Major >= 6) path = Directory.GetParent(path).ToString();
+
+            var proc = chromeWindow.getProcess();
+            if (proc.MainWindowHandle == IntPtr.Zero) {
+                // Chrome process does not have a window
+                return tabs;
+            }
+
+            var currentTabTitle = proc.MainWindowTitle;
+            Debug.WriteLine("currentTabTitle: " + currentTabTitle);
+
+            var automationElements = AutomationElement.FromHandle(proc.MainWindowHandle);
+
+            // Find `New Tab` element
+            var propCondNewTab = new PropertyCondition(AutomationElement.NameProperty, "New Tab");
+            var elemNewTab = automationElements.FindFirst(TreeScope.Descendants, propCondNewTab);
+
+            // Get parent of `New Tab` element
+            var treeWalker = TreeWalker.ControlViewWalker;
+            var elemTabStrip = treeWalker.GetParent(elemNewTab);
+
+            // Loop through all tabs
+            int currentTabIndex = 0, i = 0;
+            var tabItemCondition = new PropertyCondition(AutomationElement.ControlTypeProperty, ControlType.TabItem);
+            foreach (AutomationElement tabItem in elemTabStrip.FindAll(TreeScope.Children, tabItemCondition)) {
+                var nameProperty = tabItem.GetCurrentPropertyValue(AutomationElement.NameProperty);
+                string title = nameProperty.ToString() + " - Google Chrome";
+                Debug.WriteLine("currentTitle: " + title);
+                currentTabIndex = title == currentTabTitle ? i : currentTabIndex;
+                Debug.WriteLine("currentIndex: " + currentTabIndex);
+                tabs.Add(new FirefoxTabWindow(chromeWindow.getHandle(), currentTabIndex, i++, title));
+            }
+            foreach (FirefoxTabWindow w in tabs) {
+                w.currentTabIndex = currentTabIndex;
+            }
+
+            return tabs;
         }
 
         public List<Window> getIETabs(Window ieWindow) {

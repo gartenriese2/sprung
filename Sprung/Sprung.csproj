@@ -90,6 +90,7 @@
     <Reference Include="UIAutomationTypes" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="ChromeTabWindow.cs" />
     <Compile Include="FirefoxTabWindow.cs" />
     <Compile Include="IETabWindow.cs" />
     <Compile Include="Settings.cs" />
